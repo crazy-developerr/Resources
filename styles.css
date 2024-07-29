@@ -20,6 +20,7 @@ body {
     max-width: 900px;
     margin: 0 auto;
     padding: 20px;
+    text-align: center; /* Center align text in larger screens */
 }
 
 header {
@@ -50,10 +51,12 @@ header:hover {
     overflow: hidden;
     box-shadow: 0 0 20px var(--accent-color);
     transition: all 0.4s ease;
+    width: 100%;
+    height: auto;
 }
 
 .player-container:hover {
-    box-shadow: 0 0 30px var (--secondary-color);
+    box-shadow: 0 0 30px var(--secondary-color);
 }
 
 .video-wrapper {
@@ -72,11 +75,16 @@ header:hover {
 }
 
 .controls {
-   : flex;
-    flex-direction: column; /* Stack buttons vertically */
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 20px;
     margin-top: 20px;
+}
+
+.controls .btn {
+    width: %; /* Full width by default for flexible layout */
+    max-width: 300px; /* Limit width on larger screens */
 }
 
 .btn {
@@ -100,7 +108,7 @@ header:hover {
     background-color: var(--primary-color);
     color: var(--background-color);
     transform: translateY(-3px);
-    box-shadow: 0 0 15px var (--primary-color);
+    box-shadow: 0 0 15px var(--primary-color);
 }
 
 .dropdown {
@@ -157,18 +165,16 @@ header:hover {
 
 footer {
     background-color: var(--dark-accent);
-    color: var (--text-color);
+    color: var(--text-color);
     padding: 30px 0;
     text-align: center;
     margin-top: 60px;
     border-radius: 20px;
-    box-shadow: 0 0 20px var (--primary-color);
+    box-shadow: 0 0 20px var(--primary-color);
 }
 
 .updates-channel img {
     transition: transform 0.3s ease;
-}
-
 .updates-channel img:hover {
     transform: scale(1.1);
 }
