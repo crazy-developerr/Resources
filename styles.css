@@ -36,7 +36,7 @@ header:hover {
 
 #file-name {
     font-family: 'Orbitron', sans-serif;
-    font-size: 24px; /* Reduced font size */
+    font-size: 24px;
     color: var(--primary-color);
     text-align: center;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
@@ -48,22 +48,16 @@ header:hover {
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 0 20px var(--accent-color);
-    transition: all 0.4s ease;
-}
-
-.player-container:hover {
-    box-shadow: 0 0 30px var(--secondary-color);
 }
 
 .video-wrapper {
     position: relative;
     padding-bottom: 56.25%; /* 16:9 aspect ratio */
     height: 0;
-    overflow: hidden;
 }
 
 .video-wrapper .player,
-.video-wrapper .player-placeholder {
+.player-placeholder {
     position: absolute;
     top: 0;
     left: 0;
@@ -75,29 +69,14 @@ header:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: url('https://raw.githubusercontent.com/TahirDea/Resources/main/videobg.jpeg') no-repeat center center;
-    background-size: cover;
-    color: var(--text-color);
-    font-size: 28px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    background-color: #000;
     cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.player-placeholder:hover {
-    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2;
 }
 
 .player-placeholder .fa-play-circle {
     font-size: 64px;
-    color: rgba(255, 255, 255, 0.8);
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
-}
-
-.player-placeholder:hover .fa-play-circle {
-    color: var(--primary-color);
-    transform: scale(1.1);
+    color: #fff;
 }
 
 .controls {
@@ -174,93 +153,7 @@ header:hover {
     to { opacity: 1; transform: translateY(0) translateX(-50%); }
 }
 
-footer {
-    background-color: var(--dark-accent);
-    color: var(--text-color);
-    padding: 30px 0;
-    text-align: center;
-    margin-top: 60px;
-    border-radius: 20px;
-    box-shadow: 0 0 20px var(--primary-color);
-}
-
-.updates-channel img {
-    transition: transform 0.3s ease;
-}
-
-.updates-channel img:hover {
-    transform: scale(1.1);
-}
-
 .player-logo {
     width: 28px;
     height: 28px;
-    vertical-align: middle;
-    margin-right: 10px;
-    border-radius: 50%;
-}
-
-.explanatory-text {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 16px;
-    color: var(--accent-color);
-}
-
-@media screen and (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    header {
-        padding: 20px;
-    }
-
-    #file-name {
-        font-size: 22px;
-    }
-
-    .controls {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .btn {
-        width: 100%;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-
-    .dropdown {
-        width: 100%;
-    }
-
-    .dropdown .btn {
-        width: 100%;
-    }
-
-    .dropdown-content {
-        width: 100%;
-        left: 0;
-        transform: none;
-    }
-
-    footer {
-        padding: 20px 10px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    #file-name {
-        font-size: 18px;
-    }
-
-    .btn {
-        font-size: 16px;
-        padding: 12px 20px;
-    }
-
-    .explanatory-text {
-        font-size: 14px;
-    }
-}
+    vertical-align: middle;  
