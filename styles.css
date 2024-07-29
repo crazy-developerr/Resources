@@ -52,7 +52,7 @@ header:hover {
 }
 
 .player-container:hover {
-    box-shadow: 0 0 30px var (--secondary-color);
+    box-shadow: 0 0 30px var(--secondary-color);
 }
 
 .video-wrapper {
@@ -96,7 +96,7 @@ header:hover {
 }
 
 .player-placeholder:hover .fa-play-circle {
-    color: var (--primary-color);
+    color: var(--primary-color);
     transform: scale(1.1);
 }
 
@@ -160,7 +160,7 @@ header:hover {
 }
 
 .dropdown-content a:hover {
-    background-color: var (--primary-color);
+    background-color: var(--primary-color);
     color: var(--background-color);
 }
 
