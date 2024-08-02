@@ -53,6 +53,10 @@ header:hover {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     margin: 0;
     animation: textGlow 3s infinite alternate;
+    word-wrap: break-word; /* Allow text to wrap */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis for overflow */
+    width: 100%; /* Ensure it doesn't exceed the container */
 }
 
 .player-container {
@@ -108,8 +112,8 @@ header:hover {
 
 .btn {
     background-color: var(--dark-accent);
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color);
+    color: var (--primary-color);
+    border: 2px solid var (--primary-color);
     padding: 14px 28px;
     font-size: 16px;
     cursor: pointer;
