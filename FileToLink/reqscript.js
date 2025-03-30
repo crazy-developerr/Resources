@@ -1,26 +1,52 @@
+const currentUrl = window.location.href;
+const finalUrl = currentUrl.replace("/watch/", "/");
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize player
-    const player = document.getElementById('player');
-    const playBtn = document.querySelector('.play-btn');
-    const playIcon = document.querySelector('.play-icon');
-    const pauseIcon = document.querySelector('.pause-icon');
-    const progressBar = document.getElementById('progress-bar');
-    const progressContainer = document.getElementById('progress-container');
-    const currentTime = document.querySelector('.current-time');
-    const duration = document.querySelector('.duration');
-    const volumeBtn = document.querySelector('.volume-btn');
-    const volumeIcon = volumeBtn.querySelector('i');
-    const volumeSlider = document.querySelector('#volume-range');
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const errorOverlay = document.getElementById('error-overlay');
-    const errorMessage = document.getElementById('error-message');
-    const settingsBtn = document.querySelector('.settings-btn');
-    const settingsMenu = document.getElementById('settings-menu');
+    // Set video source immediately like in old.html
+    const videoSource = document.getElementById('video-source');
+    
+    // Check if the URL needs to be handled as a server-side variable
+    if (finalUrl.includes('%s')) {
+        console.log('Using server-provided URL');
+        // In this case, the server will have already replaced the %s with the real URL
+        // videoSource.src is already set by HTML
+    } else {
+        console.log('Setting URL via JavaScript', finalUrl);
+        videoSource.src = finalUrl;
+    }
+    
+    // Initialize Plyr with optimized settings
+    window.player = new Plyr('#player', {
+        controls: [
+            'play-large',
+            'play',
+            'progress',
+            'current-time',
+            'duration',
+            'mute',
+            'volume',
+            'fullscreen'
+        ],
+        hideControls: true,
+        autoplay: false,
+        fullscreen: { enabled: true, iosNative: true },
+        seekTime: 10,
+        volume: 1,
+        muted: false,
+        clickToPlay: true,
+        displayDuration: true,
+        toggleInvert: true,
+        tooltips: { controls: true, seek: true },
+        previewThumbnails: { enabled: false }
+    });
+    
+    // File metadata elements
     const fileSizeEl = document.getElementById('file-size');
     const fileResolutionEl = document.getElementById('file-resolution');
     const fileDurationEl = document.getElementById('file-duration');
-    const qualityOptions = document.querySelectorAll('.quality-option[data-quality]');
-    const speedOptions = document.querySelectorAll('.quality-option[data-speed]');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const errorOverlay = document.getElementById('error-overlay');
+    const errorMessage = document.getElementById('error-message');
     
     // Set theme based on user preference
     const savedTheme = localStorage.getItem('theme');
@@ -36,155 +62,59 @@ document.addEventListener('DOMContentLoaded', function() {
     let isVideoLoading = true;
     let hasPlaybackStarted = false;
     let videoFailed = false;
-    let mouseInactivityTimer;
-    let lastVolume = 1;
     
-    // Check file metadata dynamically
+    // Initialize file metadata
     setFileMetadata();
     
-    // Ensure native controls are disabled programmatically
-    player.controls = false;
-    
-    // Play/Pause toggle
-    playBtn.addEventListener('click', togglePlayPause);
-    
-    // Video click to play/pause
-    player.addEventListener('click', togglePlayPause);
-    
-    // Progress bar update
-    player.addEventListener('timeupdate', updateProgress);
-    
-    // Progress bar seek
-    progressContainer.addEventListener('click', seekVideo);
-    
-    // Make progress bar draggable
-    let isDragging = false;
-    progressContainer.addEventListener('mousedown', function() {
-        isDragging = true;
-        player.pause();
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-        if (isDragging) {
-            const rect = progressContainer.getBoundingClientRect();
-            const percent = Math.min(Math.max(0, (e.clientX - rect.left) / rect.width), 1);
-            progressBar.style.width = percent * 100 + '%';
-        }
-    });
-    
-    document.addEventListener('mouseup', function() {
-        if (isDragging) {
-            const rect = progressContainer.getBoundingClientRect();
-            const percent = (progressBar.offsetWidth / progressContainer.offsetWidth);
-            player.currentTime = percent * player.duration;
-            if (!player.paused) player.play();
-            isDragging = false;
-        }
-    });
-    
-    // Update duration display
-    player.addEventListener('loadedmetadata', function() {
-        duration.textContent = formatTime(player.duration);
-        fileDurationEl.textContent = formatTime(player.duration, true);
-        detectVideoResolution();
-        isVideoLoading = false;
-        loadingOverlay.classList.add('hidden');
-        updateFileSize();
-    });
-    
-    // Add volume control functionality
-    volumeSlider.addEventListener('input', function() {
-        player.volume = this.value;
-        lastVolume = this.value;
-        updateVolumeIcon(this.value);
-    });
-    
-    // Mute/unmute toggle
-    volumeBtn.addEventListener('click', function() {
-        if (player.volume > 0) {
-            lastVolume = player.volume;
-            player.volume = 0;
-            volumeSlider.value = 0;
-        } else {
-            player.volume = lastVolume;
-            volumeSlider.value = lastVolume;
-        }
-        updateVolumeIcon(player.volume);
-    });
-    
-    // Handle fullscreen
-    const fullscreenBtn = document.querySelector('.fullscreen-btn');
-    fullscreenBtn.addEventListener('click', toggleFullscreen);
-    
-    // Rewind and Forward buttons
-    const rewindBtn = document.querySelector('.rewind-btn');
-    const forwardBtn = document.querySelector('.forward-btn');
-    
-    rewindBtn.addEventListener('click', function() {
-        skip(-10);
-    });
-    
-    forwardBtn.addEventListener('click', function() {
-        skip(10);
-    });
-    
-    // Settings button toggle
-    settingsBtn.addEventListener('click', function() {
-        settingsMenu.classList.toggle('show');
-    });
-    
-    // Hide settings when clicking elsewhere
-    document.addEventListener('click', function(event) {
-        if (!settingsBtn.contains(event.target) && !settingsMenu.contains(event.target)) {
-            settingsMenu.classList.remove('show');
-        }
-    });
-    
-    // Quality options click handler
-    qualityOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            // Remove active class from all quality options
-            qualityOptions.forEach(opt => opt.classList.remove('active'));
-            // Add active class to clicked option
-            this.classList.add('active');
-            
-            const quality = this.getAttribute('data-quality');
-            // In a real implementation, this would switch video sources
-            // For this demo, we'll just show a toast
-            showToast(`Quality changed to ${quality}`);
-        });
-    });
-    
-    // Playback speed options
-    speedOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            speedOptions.forEach(opt => opt.classList.remove('active'));
-            this.classList.add('active');
-            
-            const speed = parseFloat(this.getAttribute('data-speed'));
-            player.playbackRate = speed;
-            showToast(`Playback speed: ${speed}x`);
-        });
-    });
-    
-    // Handle document click for dropdown
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('stream-menu');
-        const streamBtn = document.querySelector('.stream-btn');
+    // Function to set initial file metadata
+    function setFileMetadata() {
+        const fileName = document.getElementById('file-name').textContent;
+        document.title = fileName + " | Thunder FileToLink Bot";
         
-        // If click is outside dropdown and its toggle button
-        if (dropdown && !dropdown.contains(event.target) && event.target !== streamBtn && !streamBtn.contains(event.target)) {
-            dropdown.classList.remove('show');
-        }
+        // Set initial default values that will be updated when video metadata is available
+        fileDurationEl.textContent = "Loading...";
+        fileResolutionEl.textContent = "Loading...";
+        fileSizeEl.textContent = "Loading...";
+    }
+    
+    // Set file metadata dynamically
+    setFileMetadata();
+    
+    // Plyr events with enhanced error handling
+    window.player.on('ready', function() {
+        updateFileMetadata();
+        // Add keyboard shortcuts for better accessibility
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'k' || e.key === ' ') {
+                window.player.togglePlay();
+                e.preventDefault();
+            } else if (e.key === 'f') {
+                window.player.fullscreen.toggle();
+                e.preventDefault();
+            } else if (e.key === 'm') {
+                window.player.muted = !window.player.muted;
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                window.player.forward(10);
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                window.player.rewind(10);
+                e.preventDefault();
+            }
+        });
     });
     
-    // Video loading states
-    player.addEventListener('waiting', function() {
+    window.player.on('loadstart', function() {
         isVideoLoading = true;
         loadingOverlay.classList.remove('hidden');
     });
     
-    player.addEventListener('playing', function() {
+    window.player.on('canplay', function() {
+        isVideoLoading = false;
+        loadingOverlay.classList.add('hidden');
+    });
+    
+    window.player.on('playing', function() {
         isVideoLoading = false;
         hasPlaybackStarted = true;
         loadingOverlay.classList.add('hidden');
@@ -192,210 +122,114 @@ document.addEventListener('DOMContentLoaded', function() {
         videoFailed = false;
     });
     
-    // Error handling
-    player.addEventListener('error', function(e) {
+    window.player.on('error', function(e) {
         console.error('Video error:', e);
         isVideoLoading = false;
         videoFailed = true;
         loadingOverlay.classList.add('hidden');
         errorOverlay.classList.add('show');
         
-        const errorCode = e.target.error ? e.target.error.code : 0;
-        let errorText = 'An unknown error occurred while playing the video.';
-        
-        switch(errorCode) {
-            case 1:
-                errorText = 'Video playback was aborted.';
-                break;
-            case 2:
-                errorText = 'Network error occurred while loading the video.';
-                break;
-            case 3:
-                errorText = 'Error decoding the video.';
-                break;
-            case 4:
-                errorText = 'Video format not supported.';
-                break;
+        // More detailed error messages
+        let errorText = 'An unknown error occurred during playback.';
+        if (e && e.detail && e.detail.code) {
+            switch(e.detail.code) {
+                case 1:
+                    errorText = 'The video playback was aborted.';
+                    break;
+                case 2:
+                    errorText = 'Network error. Please check your connection.';
+                    break;
+                case 3:
+                    errorText = 'Video decoding failed. The format may not be supported.';
+                    break;
+                case 4:
+                    errorText = 'The video is not available or has been removed.';
+                    break;
+                default:
+                    errorText = 'Unknown error occurred. Please try again.';
+            }
         }
-        
         errorMessage.textContent = errorText;
     });
     
-    // Hide controls when mouse is inactive
-    const videoWrapper = document.querySelector('.video-wrapper');
-    const videoControls = document.querySelector('.video-controls');
-    
-    videoWrapper.addEventListener('mousemove', function() {
-        if (!player.paused) {
-            clearTimeout(mouseInactivityTimer);
-            videoControls.style.opacity = '1';
-            
-            mouseInactivityTimer = setTimeout(function() {
-                videoControls.style.opacity = '0';
-            }, 3000);
-        }
-    });
-    
-    videoWrapper.addEventListener('mouseleave', function() {
-        if (!player.paused) {
-            videoControls.style.opacity = '0';
-        }
-    });
-    
-    // Keyboard controls
-    document.addEventListener('keydown', function(e) {
-        if (document.activeElement.tagName.toLowerCase() === 'input') return;
+    // Update file metadata
+    function updateFileMetadata() {
+        // Duration
+        const videoDuration = window.player.duration || 0;
+        fileDurationEl.textContent = formatTime(videoDuration, true);
         
-        switch(e.key) {
-            case ' ':
-            case 'k':
-                e.preventDefault();
-                togglePlayPause();
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                skip(10);
-                break;
-            case 'ArrowLeft':
-                e.preventDefault();
-                skip(-10);
-                break;
-            case 'f':
-                e.preventDefault();
-                toggleFullscreen();
-                break;
-            case 'm':
-                e.preventDefault();
-                if (player.volume > 0) {
-                    lastVolume = player.volume;
-                    player.volume = 0;
-                    volumeSlider.value = 0;
-                } else {
-                    player.volume = lastVolume;
-                    volumeSlider.value = lastVolume;
-                }
-                updateVolumeIcon(player.volume);
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                player.volume = Math.min(1, player.volume + 0.05);
-                volumeSlider.value = player.volume;
-                updateVolumeIcon(player.volume);
-                break;
-            case 'ArrowDown':
-                e.preventDefault();
-                player.volume = Math.max(0, player.volume - 0.05);
-                volumeSlider.value = player.volume;
-                updateVolumeIcon(player.volume);
-                break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                e.preventDefault();
-                player.currentTime = player.duration * (parseInt(e.key) / 10);
-                break;
-        }
-    });
-    
-    // Helper functions
-    function togglePlayPause() {
-        if (player.paused) {
-            player.play().catch(err => {
-                console.error('Error playing video:', err);
-                if (!hasPlaybackStarted) {
-                    errorOverlay.classList.add('show');
-                    videoFailed = true;
-                }
-            });
-            playIcon.style.display = 'none';
-            pauseIcon.style.display = 'block';
-        } else {
-            player.pause();
-            playIcon.style.display = 'block';
-            pauseIcon.style.display = 'none';
-        }
-    }
-    
-    function updateProgress() {
-        const percent = (player.currentTime / player.duration) * 100;
-        progressBar.style.width = percent + '%';
-        currentTime.textContent = formatTime(player.currentTime);
-        
-        // Update ARIA values for accessibility
-        progressContainer.setAttribute('aria-valuenow', percent);
-        progressContainer.setAttribute('aria-valuetext', formatTime(player.currentTime));
-    }
-    
-    function seekVideo(e) {
-        const rect = progressContainer.getBoundingClientRect();
-        const percent = (e.clientX - rect.left) / rect.width;
-        player.currentTime = percent * player.duration;
-    }
-    
-    function skip(seconds) {
-        player.currentTime = Math.max(0, Math.min(player.duration, player.currentTime + seconds));
-        showToast(`${seconds > 0 ? '+' : ''}${seconds} seconds`);
-    }
-    
-    function updateVolumeIcon(volume) {
-        if (volume === 0) {
-            volumeIcon.className = 'fas fa-volume-mute';
-        } else if (volume < 0.5) {
-            volumeIcon.className = 'fas fa-volume-down';
-        } else {
-            volumeIcon.className = 'fas fa-volume-up';
-        }
-    }
-    
-    function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            if (player.parentElement.requestFullscreen) {
-                player.parentElement.requestFullscreen();
-            } else if (player.parentElement.webkitRequestFullscreen) {
-                player.parentElement.webkitRequestFullscreen();
-            } else if (player.parentElement.msRequestFullscreen) {
-                player.parentElement.msRequestFullscreen();
-            }
-            fullscreenBtn.querySelector('i').className = 'fas fa-compress';
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-            fullscreenBtn.querySelector('i').className = 'fas fa-expand';
-        }
-    }
-    
-    function detectVideoResolution() {
-        // For real implementation, you would detect the actual video resolution
-        // For this demo, we'll simulate it
-        const width = player.videoWidth || 1280;
-        const height = player.videoHeight || 720;
+        // Resolution
+        const videoElement = window.player.elements.original;
+        const width = videoElement.videoWidth || 1280;
+        const height = videoElement.videoHeight || 720;
         fileResolutionEl.textContent = `${width}x${height}`;
+        
+        // File size estimation with improved calculation
+        let bitrate = 1; // Default 1 Mbps
+        if (width * height > 1920 * 1080) {
+            bitrate = 4; // 4K content
+        } else if (width * height > 1280 * 720) {
+            bitrate = 2.5; // 1080p content
+        } else if (width * height > 640 * 480) {
+            bitrate = 1.5; // 720p content
+        }
+        
+        const estimatedSize = (bitrate * 1024 * 1024 / 8) * videoDuration / 1024 / 1024;
+        fileSizeEl.textContent = estimatedSize.toFixed(1) + ' MB';
+    }
+
+    // Ensure video source is set correctly with better error handling
+    if (!videoSource.src || videoSource.src === window.location.href) {
+        try {
+            videoSource.src = finalUrl;
+            const videoElement = document.getElementById('player');
+            
+            // Force video element to reload with new source
+            videoElement.load();
+            
+            window.player.source = {
+                type: 'video',
+                sources: [
+                    {
+                        src: finalUrl,
+                        type: 'video/mp4'
+                    }
+                ]
+            };
+        } catch (err) {
+            console.error('Error setting video source:', err);
+            errorMessage.textContent = 'Error loading video source. Please try again.';
+            errorOverlay.classList.add('show');
+        }
     }
     
-    function updateFileSize() {
-        // In a real implementation, server would provide file size
-        // For this demo, we'll simulate it based on duration and resolution
-        const duration = player.duration || 0;
-        const width = player.videoWidth || 1280;
-        const height = player.videoHeight || 720;
+    // Add touch event handling for mobile
+    if ('ontouchstart' in window) {
+        const playerElement = document.querySelector('.player-container');
+        let touchStartX, touchEndX;
         
-        // Rough estimate based on resolution and duration
-        const bitrate = (width * height < 921600) ? 1 : 2; // Mbps
-        const estimatedSize = (bitrate * 1024 * 1024 / 8) * duration / 1024 / 1024;
+        playerElement.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
         
-        fileSizeEl.textContent = estimatedSize.toFixed(1) + ' MB';
+        playerElement.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+        
+        function handleSwipe() {
+            const diff = touchStartX - touchEndX;
+            // Must swipe at least 50px to register
+            if (Math.abs(diff) < 50) return;
+            
+            if (diff > 0) {
+                // Swipe left, forward 10s
+                window.player.forward(10);
+            } else {
+                // Swipe right, rewind 10s
+                window.player.rewind(10);
+            }
+        }
     }
 });
 
@@ -442,14 +276,48 @@ function updateThemeIcon(theme) {
 function toggleStreamMenu() {
     const menu = document.getElementById('stream-menu');
     menu.classList.toggle('show');
+    
+    // Close dropdown when clicking outside
+    if (menu.classList.contains('show')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeDropdownOnClickOutside);
+        }, 10);
+    } else {
+        document.removeEventListener('click', closeDropdownOnClickOutside);
+    }
+}
+
+function closeDropdownOnClickOutside(event) {
+    const menu = document.getElementById('stream-menu');
+    const streamBtn = document.querySelector('.stream-btn');
+    
+    if (!menu.contains(event.target) && !streamBtn.contains(event.target)) {
+        menu.classList.remove('show');
+        document.removeEventListener('click', closeDropdownOnClickOutside);
+    }
 }
 
 // Play in external apps
 function playOnline(player) {
-    const videoUrl = encodeURIComponent(document.getElementById('player').querySelector('source').src);
+    // Use the finalUrl from the global scope, exactly like old.html
+    let videoUrl = finalUrl; // FIXED: Don't use encodeURIComponent, use direct URL as in old.html
     let appUrl = '';
     
     switch(player) {
+        // PC Players
+        case 'vlc-pc':
+            appUrl = 'vlc://' + finalUrl;
+            break;
+        case 'potplayer':
+            appUrl = 'potplayer://' + finalUrl;
+            break;
+        case 'mpc':
+            appUrl = 'mpc://' + finalUrl;
+            break;
+        case 'kmpc':
+            appUrl = 'kmplayer://' + finalUrl;
+            break;
+        // Mobile Players
         case 'vlc':
             appUrl = 'vlc://' + videoUrl;
             break;
@@ -463,13 +331,14 @@ function playOnline(player) {
             appUrl = 'nplayer-' + videoUrl;
             break;
         case 'splayer':
-            appUrl = 'splayer://' + videoUrl;
+            appUrl = 'intent:' + videoUrl + '#Intent;action=com.young.simple.player.playback_online;package=com.young.simple.player;end';
             break;
         case 'km':
-            appUrl = 'kmplayer://' + videoUrl;
+            appUrl = 'intent:' + videoUrl + '#Intent;package=com.kmplayer;end';
             break;
         default:
-            appUrl = videoUrl;
+            console.warn(`Unknown player type: ${player}`);
+            showToast(`Unknown player type: ${player}`, 'error');
     }
     
     window.location.href = appUrl;
@@ -481,26 +350,19 @@ function playOnline(player) {
 
 // Download file
 function download() {
-    const videoUrl = document.getElementById('player').querySelector('source').src;
-    const a = document.createElement('a');
-    a.href = videoUrl;
-    a.download = document.getElementById('file-name').textContent;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    showToast('Download started');
+    // Use the finalUrl directly like in old.html
+    window.location.href = finalUrl;
 }
 
 // Copy link to clipboard
 function copyLink() {
-    const videoUrl = document.getElementById('player').querySelector('source').src;
-    navigator.clipboard.writeText(videoUrl).then(function() {
+    // Use the finalUrl directly like in old.html
+    navigator.clipboard.writeText(finalUrl).then(function() {
         showToast('Link copied to clipboard');
     }).catch(function() {
         // Fallback for older browsers
         const textarea = document.createElement('textarea');
-        textarea.value = videoUrl;
+        textarea.value = finalUrl;
         document.body.appendChild(textarea);
         textarea.select();
         document.execCommand('copy');
@@ -511,21 +373,40 @@ function copyLink() {
 
 // Retry playback after error
 function retryPlayback() {
-    const player = document.getElementById('player');
+    const videoElement = document.querySelector('#player');
     const errorOverlay = document.getElementById('error-overlay');
     const loadingOverlay = document.getElementById('loading-overlay');
     
     errorOverlay.classList.remove('show');
     loadingOverlay.classList.remove('hidden');
     
-    // Reset video source and reload
-    const currentSrc = player.querySelector('source').src;
-    player.querySelector('source').src = currentSrc;
-    player.load();
-    player.play().catch(err => {
-        console.error('Error retrying video:', err);
-        errorOverlay.classList.add('show');
-    });
+    // Use the finalUrl directly
+    const source = videoElement.querySelector('source');
+    source.src = finalUrl;
+    
+    // Force reload the video element
+    videoElement.load();
+    
+    // Use window.player instead of getting a new instance
+    if (window.player) {
+        window.player.source = {
+            type: 'video',
+            sources: [
+                {
+                    src: finalUrl,
+                    type: 'video/mp4'
+                }
+            ]
+        };
+    } else {
+        // Fallback if player isn't available
+        console.warn('Plyr instance not found, using native video API');
+        videoElement.load();
+        videoElement.play().catch(err => {
+            console.error('Error retrying video:', err);
+            errorOverlay.classList.add('show');
+        });
+    }
 }
 
 // Show toast notification
@@ -546,16 +427,45 @@ function showToast(message) {
 function setFileMetadata() {
     // This would be replaced by server-side variables
     const fileName = document.getElementById('file-name').textContent;
-    document.title = fileName + " | File Streaming";
+    document.title = fileName + " | Thunder FileToLink Bot";
 }
 
-// Service Worker Registration for PWA support
+// Register service worker for Progressive Web App capabilities
+// This enables offline functionality and improves performance
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('ServiceWorker registration successful');
-        }).catch(function(err) {
-            console.log('ServiceWorker registration failed: ', err);
-        });
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function(registration) {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
     });
 }
+
+// Application interface module
+// Provides a unified API for HTML element interaction while maintaining separation of concerns
+// All event handlers reference this namespace for consistency and maintainability
+const app = {
+    toggleDarkMode: function() {
+        toggleDarkMode();
+    },
+    toggleStreamMenu: function(event) {
+        // Prevent event bubbling to avoid unintended interactions
+        if (event) event.stopPropagation();
+        toggleStreamMenu();
+    },
+    playOnline: function(playerType) {
+        playOnline(playerType);
+    },
+    download: function() {
+        download();
+    },
+    copyLink: function() {
+        copyLink();
+    },
+    retryPlayback: function() {
+        retryPlayback();
+    }
+};
