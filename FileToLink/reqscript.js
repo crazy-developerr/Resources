@@ -190,7 +190,7 @@
         'potplayer': url => `potplayer://${url}`,
         'mpc': url => `mpc://${url}`,
         'kmpc': url => `kmplayer://${url}`,
-        'vlc': url => `vlc://${url}`,
+        'vlc': url => `intent:${url}#Intent;package=org.videolan.vlc;S.title=${encodeURIComponent(getCurrentFileName() || 'Video')};end`,
         'mx': url => `intent:${url}#Intent;package=com.mxtech.videoplayer.ad;S.title=${encodeURIComponent(getCurrentFileName() || 'Video')};end`,
         'mxpro': url => `intent:${url}#Intent;package=com.mxtech.videoplayer.pro;S.title=${encodeURIComponent(getCurrentFileName() || 'Video')};end`,
         'nplayer': url => `nplayer-${url}`,
