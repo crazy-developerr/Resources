@@ -3,7 +3,7 @@
 
     // ===== CONFIG & STATE =====
     const currentUrl = window.location.href;
-    const finalUrl = currentUrl.includes('/watch/') ? currentUrl.replace("/watch/", "/") : currentUrl;
+    const finalUrl = currentUrl.includes('/watch/') ? currentUrl.replace("/watch/", "/dl") : currentUrl;
     const HOLD_DELAY = 300;
     
     const TOAST_TYPES = {
@@ -490,5 +490,6 @@
     } else {
         init();
     }
+
 
 })();
